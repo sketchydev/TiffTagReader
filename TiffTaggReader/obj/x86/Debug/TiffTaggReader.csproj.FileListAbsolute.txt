@@ -1,0 +1,5 @@
+C:\Users\DEV\Documents\Visual Studio 2010\Projects\TiffTaggReader\TiffTaggReader\bin\Debug\TiffTaggReader.exe
+C:\Users\DEV\Documents\Visual Studio 2010\Projects\TiffTaggReader\TiffTaggReader\bin\Debug\TiffTaggReader.pdb
+C:\Users\DEV\Documents\Visual Studio 2010\Projects\TiffTaggReader\TiffTaggReader\obj\x86\Debug\TiffTaggReader.exe
+C:\Users\DEV\Documents\Visual Studio 2010\Projects\TiffTaggReader\TiffTaggReader\obj\x86\Debug\TiffTaggReader.pdb
+C:\Users\DEV\documents\visual studio 2010\Projects\TiffTaggReader\TiffTaggReader\obj\x86\Debug\TiffTaggReader.csprojResolveAssemblyReference.cache
