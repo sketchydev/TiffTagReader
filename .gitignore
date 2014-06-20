@@ -6,8 +6,7 @@
 *.exe
 *.o
 *.so
-*.suo
-_Resharper*
+
 
 # Packages #
 ############
@@ -37,3 +36,5 @@ _Resharper*
 .Trashes
 ehthumbs.db
 Thumbs.db
+*.suo
+_Resharper*

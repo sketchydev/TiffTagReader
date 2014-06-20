@@ -45,6 +45,7 @@
   <ItemGroup>
     <Compile Include="FileHandler.cs" />
     <Compile Include="IFD.cs" />
+    <Compile Include="IFDFixer.cs" />
     <Compile Include="PageFlipper.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

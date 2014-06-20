@@ -9,6 +9,7 @@ namespace TiffTaggReader
     {
         public  bool LittleEndian;
         private  string[] _hexFile;
+        private List<IFD> _ifds; 
 
         public static string[] ByteToHexArray(byte[] array)
         {
@@ -48,12 +49,52 @@ namespace TiffTaggReader
             return header;
         }
 
+        public void CheckForMissingData(string filename)
+        {
+            ReadTags(filename);
+
+            Console.WriteLine("File Size: {0} bytes ",_hexFile.Length);
+            var ifdCount = 0;
+            var ifdTotalSize = 0;
+            var dataSize = 0;
+            foreach (var ifd in _ifds)
+            {
+                Console.WriteLine("IFD {1} Base Size: {0} bytes ", (2 + 4 + (ifd.EntryCount * 12)),ifdCount);
+                ifdTotalSize += (2 + 4 + (ifd.EntryCount * 12));                
+               
+                foreach (var ifdEntry in ifd.Entries)
+                {
+                    if (!(GetWordSize(ifdEntry.IntType) * ifdEntry.Count <= 4))
+                    {                                                                   
+                        ifdTotalSize += ifdEntry.Count*GetWordSize(ifdEntry.IntType);
+                   }
+
+
+                    if (ifdEntry.IntTag==279)
+                    {
+                        dataSize += ifdEntry.DecodedValue.Split(',').Select(int.Parse).Sum();
+                    }
+
+                }    
+            
+                ifdCount += 1;
+            }
+
+            Console.WriteLine("Size Of All IFDs: {0} bytes ", ifdTotalSize);
+            Console.WriteLine("Size Of Known Data: {0} bytes ", dataSize);
+            Console.WriteLine("Difference From File Size: {0} bytes ", (_hexFile.Length - dataSize) - ifdTotalSize);
+            Console.WriteLine("Percentage Of File Accounted For= {0}%", ((decimal)(ifdTotalSize + dataSize) / _hexFile.Length)*100);
+            Console.ReadKey();
+
+        }
+
         public  IFD ReadIfD(string[] hexFile, string offset)
         {
             var thisIFD = new IFD();
             var intOffset = Convert.ToInt32(offset, 16);
             var ifdCount = hexFile[intOffset + 1] + hexFile[intOffset];
             var intIfdCount = Convert.ToInt32(ifdCount, 16);
+            
 
             thisIFD.EntryCount = intIfdCount;
             thisIFD.Entries = new IFDEntry[intIfdCount];
@@ -71,9 +112,13 @@ namespace TiffTaggReader
                 var thisIFDEntry = new IFDEntry
                                        {
                                            RawTag = ifdString[i][0],
-                                           Raw = ifdBytes.ToString(),
+                                           
                                            IntTag = Convert.ToInt32(ifdString[i][0], 16)
                                        };
+                foreach (var ifdByte in ifdBytes)
+                {
+                    thisIFDEntry.Raw += ifdByte;
+                }
 
                 //Tag
                 thisIFDEntry.Tag = TagConverter(thisIFDEntry.IntTag);                
@@ -83,7 +128,7 @@ namespace TiffTaggReader
                 thisIFDEntry.IntType = Convert.ToInt32(ifdString[i][1], 16);
 
                 //Count
-                thisIFDEntry.IntType = Convert.ToInt32(ifdString[i][2], 16);
+                thisIFDEntry.Count = Convert.ToInt32(ifdString[i][2], 16);
 
                 //Value
 
@@ -113,39 +158,20 @@ namespace TiffTaggReader
             return thisIFD;
         }
 
-        public  void ReadAllIfDs(string[] hexFile, string ifdOffset )
+        public  List<IFD> ReadAllIfDs(string[] hexFile, string ifdOffset )
         {
-
+            var ifdList = new List<IFD>();
+                       
             while (Convert.ToInt32(ifdOffset, 16) > 0)
             {
                 //read IFD
-                var intOffset = Convert.ToInt32(ifdOffset, 16);
-                var ifdCount = hexFile[intOffset + 1] + hexFile[intOffset];
-                var intIfdCount = Convert.ToInt32(ifdCount, 16);
+                var thisIFD = ReadIfD(hexFile, ifdOffset);                
 
-                var ifdString = new string[intIfdCount][];
-
-                for (var i = 0; i < intIfdCount; i++)
-                {
-                    var ifdBytes = new string[12];
-                    Array.Copy(hexFile, intOffset + 2 + (i * 12), ifdBytes, 0, 12);
-                    ifdString[i] = ConvertIfdArrayToString(ifdBytes);
-                }
-
-                var nextIfdOffsetBase = intOffset + 2 + (intIfdCount * 12);
-
-                if (LittleEndian)
-                {
-                    ifdOffset = hexFile[nextIfdOffsetBase + 3] + hexFile[nextIfdOffsetBase + 2] +
-                                          hexFile[nextIfdOffsetBase + 1] + hexFile[nextIfdOffsetBase];
-                }
-                else
-                {
-                    ifdOffset = hexFile[nextIfdOffsetBase] + hexFile[nextIfdOffsetBase + 1] +
-                                        hexFile[nextIfdOffsetBase + 2] + hexFile[nextIfdOffsetBase + 3];
-                }
-                Console.WriteLine("Next IFD at offset: " + Convert.ToInt32(ifdOffset, 16));
+                Console.WriteLine("Next IFD at offset: " + thisIFD.IntNextOffset);
+                ifdList.Add(thisIFD);
+                ifdOffset = thisIFD.NextOffset;
             }
+            return ifdList;
         }
 
         public void ReadTags(string filename)
@@ -155,7 +181,7 @@ namespace TiffTaggReader
 
             var header = ReadHeader();
             
-            ReadAllIfDs(_hexFile, header[2]);
+            _ifds = ReadAllIfDs(_hexFile, header[2]);
 
             Console.ReadLine();
         }

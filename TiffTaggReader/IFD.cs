@@ -7,6 +7,7 @@
         public int IntNextOffset;
 
         public IFDEntry[] Entries;
+        public bool isValid;
 
     }
 
